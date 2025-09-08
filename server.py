@@ -38,7 +38,7 @@ class MessageFilter(logging.Filter):
         # Block messages containing these strings
         blocked_phrases = [
             "LiteLLM completion()",
-            "HTTP Request:", 
+            "HTTP Request:",
             "selected model name for cost calculation",
             "utils.py",
             "cost_calculator"
@@ -79,11 +79,11 @@ app = FastAPI()
 
 # Get API keys from environment
 ANTHROPIC_API_KEY = os.environ.get("ANTHROPIC_API_KEY")
-OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY")
+LLM_API_KEY = os.environ.get("LLM_API_KEY")
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
 
-# Get OpenAI base URL from environment (if set)
-OPENAI_BASE_URL = os.environ.get("OPENAI_BASE_URL")
+# Get base URL from environment (if set)
+LLM_BASE_URL = os.environ.get("LLM_BASE_URL")
 
 # Get preferred provider (default to openai)
 PREFERRED_PROVIDER = os.environ.get("PREFERRED_PROVIDER", "openai").lower()
@@ -1117,13 +1117,13 @@ async def create_message(
         
         # Determine which API key to use based on the model
         if request.model.startswith("openai/"):
-            litellm_request["api_key"] = OPENAI_API_KEY
-            # Use custom OpenAI base URL if configured
-            if OPENAI_BASE_URL:
-                litellm_request["api_base"] = OPENAI_BASE_URL
-                logger.debug(f"Using OpenAI API key and custom base URL {OPENAI_BASE_URL} for model: {request.model}")
+            litellm_request["api_key"] = LLM_API_KEY
+            # Use custom base URL if configured
+            if LLM_BASE_URL:
+                litellm_request["api_base"] = LLM_BASE_URL
+                logger.debug(f"Using LLM API key and custom base URL {LLM_BASE_URL} for model: {request.model}")
             else:
-                logger.debug(f"Using OpenAI API key for model: {request.model}")
+                logger.debug(f"Using LLM API key for model: {request.model}")
         elif request.model.startswith("gemini/"):
             litellm_request["api_key"] = GEMINI_API_KEY
             logger.debug(f"Using Gemini API key for model: {request.model}")
@@ -1429,8 +1429,8 @@ async def count_tokens(
             }
             
             # Add custom base URL for OpenAI models if configured
-            if request.model.startswith("openai/") and OPENAI_BASE_URL:
-                token_counter_args["api_base"] = OPENAI_BASE_URL
+            if request.model.startswith("openai/") and LLM_BASE_URL:
+                token_counter_args["api_base"] = LLM_BASE_URL
             
             # Count tokens
             token_count = token_counter(**token_counter_args)
@@ -1498,7 +1498,7 @@ def log_request_beautifully(method, path, claude_model, openai_model, num_messag
     print(model_line)
     sys.stdout.flush()
 
-if __name__ == "__main__":
+def main():
     import sys
     if len(sys.argv) > 1 and sys.argv[1] == "--help":
         print("Run with: uvicorn server:app --reload --host 0.0.0.0 --port 8082")
@@ -1506,3 +1506,6 @@ if __name__ == "__main__":
     
     # Configure uvicorn to run with minimal logs
     uvicorn.run(app, host="0.0.0.0", port=8082, log_level="error")
+
+if __name__ == "__main__":
+    main()
