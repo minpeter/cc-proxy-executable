@@ -14,4 +14,4 @@ dependencies = [
 ]
 
 [project.scripts]
-cc-proxy = "server:main"
+cc-proxy-executable = "server:main"
