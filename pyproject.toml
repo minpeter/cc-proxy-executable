@@ -1,5 +1,5 @@
 [project]
-name = "anthropic-proxy"
+name = "cc-proxy-executable"
 version = "0.1.0"
 description = "Proxy that translates between Anthropic API and LiteLLM"
 readme = "README.md"
@@ -13,3 +13,5 @@ dependencies = [
     "python-dotenv>=1.0.0",
 ]
 
+[project.scripts]
+cc-proxy = "server:main"
