@@ -16,7 +16,9 @@ curl -LsSf https://astral.sh/uv/install.sh | sh
 
 ### Installation and Usage
 
-You can install and run the proxy directly from GitHub with a single command. You will need to provide an API key for the service you want to use.
+You can install and run the proxy directly from GitHub with a single command. `uvx` will automatically find and run the `cc-proxy-executable` script, which is the main executable for this package.
+
+You will need to provide an API key for the service you want to use.
 
 For OpenAI, you would run:
 ```bash
