@@ -99,6 +99,22 @@ search_tool = {
     }
 }
 
+url_tool = {
+    "name": "fetch_website",
+    "description": "Fetches content from a URL.",
+    "input_schema": {
+        "type": "object",
+        "properties": {
+            "url": {
+                "type": "string",
+                "description": "The URL to fetch content from.",
+                "format": "uri"
+            }
+        },
+        "required": ["url"]
+    }
+}
+
 # Test scenarios
 TEST_SCENARIOS = {
     # Simple text response
@@ -180,6 +196,17 @@ TEST_SCENARIOS = {
             {"role": "user", "content": "What is 135 + 17.5 divided by 2.5?"}
         ],
         "tools": [calculator_tool],
+        "tool_choice": {"type": "auto"}
+    },
+
+    # Test for format:uri removal
+    "url_tool_test": {
+        "model": MODEL,
+        "max_tokens": 300,
+        "messages": [
+            {"role": "user", "content": "Please fetch the content from https://example.com for me."}
+        ],
+        "tools": [url_tool],
         "tool_choice": {"type": "auto"}
     }
 }

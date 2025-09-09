@@ -115,6 +115,23 @@ GEMINI_MODELS = [
     "gemini-2.5-pro"
 ]
 
+# Helper function to remove 'format: uri' from schema
+def remove_uri_format_from_schema(schema: Any) -> Any:
+    """Recursively removes 'format': 'uri' from a JSON schema."""
+    if isinstance(schema, dict):
+        # Remove 'format': 'uri' if present
+        if schema.get("type") == "string" and schema.get("format") == "uri":
+            logger.debug("Removing 'format': 'uri' from schema.")
+            schema.pop("format")
+
+        # Recursively clean nested schemas
+        for key, value in list(schema.items()):
+            schema[key] = remove_uri_format_from_schema(value)
+    elif isinstance(schema, list):
+        # Recursively clean items in a list
+        return [remove_uri_format_from_schema(item) for item in schema]
+    return schema
+
 # Helper function to clean schema for Gemini
 def clean_gemini_schema(schema: Any) -> Any:
     """Recursively removes unsupported fields from a JSON schema for Gemini."""
@@ -585,8 +602,11 @@ def convert_anthropic_to_litellm(anthropic_request: MessagesRequest) -> Dict[str
                      logger.error(f"Could not convert tool to dict: {tool}")
                      continue # Skip this tool if conversion fails
 
-            # Clean the schema if targeting a Gemini model
+            # Always remove "format": "uri" from any schema
             input_schema = tool_dict.get("input_schema", {})
+            input_schema = remove_uri_format_from_schema(input_schema)
+
+            # Clean the schema if targeting a Gemini model
             if is_gemini_model:
                  logger.debug(f"Cleaning schema for Gemini tool: {tool_dict.get('name')}")
                  input_schema = clean_gemini_schema(input_schema)
