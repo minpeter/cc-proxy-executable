@@ -50,8 +50,8 @@ To use the proxy with `friendli.ai`, you would run the following command:
 ```bash
 LLM_BASE_URL="https://api.friendli.ai/serverless/v1" \
 LLM_API_KEY="your-friendli-token" \
-BIG_MODEL="LGAI-EXAONE/EXAONE-4.0.1-32B" \
-SMALL_MODEL="LGAI-EXAONE/EXAONE-4.0.1-32B" \
+BIG_MODEL="Qwen/Qwen3-32B" \
+SMALL_MODEL="Qwen/Qwen3-235B-A22B-Instruct-2507" \
 uvx https://github.com/minpeter/cc-proxy-executable.git
 ```
 
