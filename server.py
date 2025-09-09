@@ -115,21 +115,44 @@ GEMINI_MODELS = [
     "gemini-2.5-pro"
 ]
 
-# Helper function to remove 'format: uri' from schema
-def remove_uri_format_from_schema(schema: Any) -> Any:
-    """Recursively removes 'format': 'uri' from a JSON schema."""
-    if isinstance(schema, dict):
-        # Remove 'format': 'uri' if present
-        if schema.get("type") == "string" and schema.get("format") == "uri":
-            logger.debug("Removing 'format': 'uri' from schema.")
-            schema.pop("format")
+# Set of JSON Schema validation keywords to remove.
+# We remove these to prevent validation errors on the proxy side,
+# while keeping structural keywords like 'type', 'properties', 'items'.
+VALIDATION_KEYWORDS_TO_REMOVE = {
+    # String validation
+    "minLength", "maxLength", "pattern", "format",
+    # Number validation
+    "minimum", "maximum", "exclusiveMinimum", "exclusiveMaximum", "multipleOf",
+    # Object validation
+    "required", "minProperties", "maxProperties", "patternProperties", "additionalProperties",
+    # Array validation
+    "minItems", "maxItems", "uniqueItems", "contains",
+    # General validation
+    "enum", "const",
+    # Logical validation
+    "not"
+}
 
-        # Recursively clean nested schemas
+def remove_validation_keywords_from_schema(schema: Any) -> Any:
+    """
+    Recursively removes all specified validation keywords from a JSON schema,
+    leaving only the structural elements.
+    """
+    if isinstance(schema, dict):
+        # First, remove any validation keywords at the current level
+        keys_to_remove = [key for key in schema if key in VALIDATION_KEYWORDS_TO_REMOVE]
+        for key in keys_to_remove:
+            logger.debug(f"Removing validation keyword '{key}' from schema.")
+            del schema[key]
+
+        # Then, recurse into nested structures like properties, items, etc.
         for key, value in list(schema.items()):
-            schema[key] = remove_uri_format_from_schema(value)
+            schema[key] = remove_validation_keywords_from_schema(value)
+
     elif isinstance(schema, list):
-        # Recursively clean items in a list
-        return [remove_uri_format_from_schema(item) for item in schema]
+        # If it's a list, recurse into each item
+        return [remove_validation_keywords_from_schema(item) for item in schema]
+
     return schema
 
 # Helper function to clean schema for Gemini
@@ -602,9 +625,9 @@ def convert_anthropic_to_litellm(anthropic_request: MessagesRequest) -> Dict[str
                      logger.error(f"Could not convert tool to dict: {tool}")
                      continue # Skip this tool if conversion fails
 
-            # Always remove "format": "uri" from any schema
+            # Remove validation keywords from the tool schema to prevent issues with underlying models.
             input_schema = tool_dict.get("input_schema", {})
-            input_schema = remove_uri_format_from_schema(input_schema)
+            input_schema = remove_validation_keywords_from_schema(input_schema)
 
             # Clean the schema if targeting a Gemini model
             if is_gemini_model:
@@ -1294,6 +1317,7 @@ async def create_message(
         
         # Handle streaming mode
         if request.stream:
+            logger.error(f"--- STREAMING LITELLM REQUEST: {json.dumps(litellm_request)} ---")
             # Use LiteLLM for streaming
             num_tools = len(request.tools) if request.tools else 0
             
@@ -1314,6 +1338,7 @@ async def create_message(
                 media_type="text/event-stream"
             )
         else:
+            logger.error(f"--- NON-STREAMING LITELLM REQUEST: {json.dumps(litellm_request)} ---")
             # Use LiteLLM for regular completion
             num_tools = len(request.tools) if request.tools else 0
             
